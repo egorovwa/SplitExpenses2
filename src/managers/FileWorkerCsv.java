@@ -4,16 +4,22 @@ import models.Person;
 import models.Transaction;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 
 public class FileWorkerCsv implements FileWorker {
-    private final String PATH_INPUT_FILE = "src/Files/input.csv";
-    Map<String, Person> personMap;
 
-    public FileWorkerCsv() {
+    private Map<String, Person> personMap;
+    private final String pathInputFile;
+    private final String pathOutPutFile;
+    public FileWorkerCsv(String inputFilePath, String outPutFilePath) {
         personMap = new HashMap<>();
+        this.pathInputFile =inputFilePath;
+        this.pathOutPutFile = outPutFilePath;
     }
-
 
     @Override
     public Map<String, Person> readFile() {
@@ -23,28 +29,46 @@ public class FileWorkerCsv implements FileWorker {
 
     @Override
     public void writeFile(List<Transaction> transactionList) {
-        List<String> listForWrite = setListForWrite(transactionList);
-        System.out.println("list for write");
-        System.out.println(listForWrite);
-        String[][] arrayToWrite = setArryToWrite(transactionList);
+        String[][] arrayToWrite = setArrayToWrite(transactionList);
+        try {
+            WriteArrayToFile(arrayToWrite);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
-    private List<String> setListForWrite(List<Transaction> transactionList) {
-        List<String> listForWrite = new ArrayList<>();
-
-
-        return listForWrite;
+    private void WriteArrayToFile(String[][] arrayToWrite) throws IOException {
+        Path path = Paths.get(pathOutPutFile);
+        if (Files.exists(path)){
+            Files.delete(path);
+            Files.createFile(path);
+        }
+        Writer writer = new FileWriter(String.valueOf(path),StandardCharsets.UTF_8,true);
+        for (int i = 0; i < arrayToWrite.length; i++) {
+            StringBuilder stringBuilder = new StringBuilder();
+            for (int j = 0; j < arrayToWrite.length; j++) {
+                if (arrayToWrite[i][j] != null){
+                    stringBuilder.append(arrayToWrite[i][j])
+                            .append(",");
+                }else {
+                    stringBuilder.append(",");
+                }
+            }
+            stringBuilder.deleteCharAt(stringBuilder.length()-1);
+            stringBuilder.append("\n");
+            writer.write(stringBuilder.toString());
+        }
+        writer.close();
     }
 
-    private String[][] setArryToWrite(List<Transaction> transactionList) {
+    private String[][] setArrayToWrite(List<Transaction> transactionList) {
         Map<String, Integer> toArray = getToArrayMap(transactionList);
         String[][] lineArray = new String[toArray.size() + 1][toArray.size() + 1];
-        lineArray[0][0] = ",";
-
+        lineArray[0][0] = "";
         for (Transaction transaction : transactionList) {
             int toIndex = toArray.get(transaction.getTo().toString());
             int fromIndex = toArray.get(transaction.getFrom().toString());
-            String sum = " ";
+            String sum;
             sum = String.valueOf(transaction.getSum());
             lineArray[fromIndex][toIndex] = sum;
             lineArray[fromIndex][0] = transaction.getFrom().toString();
@@ -60,10 +84,8 @@ public class FileWorkerCsv implements FileWorker {
         for (int i = 0; i < lineArray.length; i++) {
             for (int j = 0; j < lineArray.length; j++) {
                 System.out.print(lineArray[i][j] + " ");
-
             }
             System.out.println("");
-
         }
     }
 
@@ -83,9 +105,7 @@ public class FileWorkerCsv implements FileWorker {
         return toArray;
     }
 
-
     private Map<String, Person> setPersonMap() {
-
         List<String[]> fileStrings = getFileStrings();
         String[] fistString = fileStrings.get(0);
         for (int i = 2; i < fistString.length; i++) {
@@ -97,56 +117,46 @@ public class FileWorkerCsv implements FileWorker {
             if (personMap.containsKey(line[0])) {
                 Person person = personMap.get(line[0]);
                 setPersonExpenseMap(person, fistString, line);
-
             }
         }
         return personMap;
     }
 
     private void setPersonExpenseMap(Person person, String[] fistString, String[] line) {
-        String expenceName = line[1];           // TODO: 23.03.2022 exception приделать на равенство строк
-        Map<String, Map<Person, Double>> personExpencesMap = person.getPersonExpencesMap();
-        Map<Person, Double> debtorMap = new HashMap<>();        // TODO: 23.03.2022 Случай повтора сроки
+        String expenseName = line[1];
+        Map<String, Map<Person, Double>> personExpensesMap = person.getPersonExpensesMap();
+        Map<Person, Double> debtorMap = new HashMap<>();
         for (int i = 2; i < fistString.length; i++) {
             String debtorName = fistString[i];
             String debtStr = line[i];
             if (!debtStr.equals("") && !debtStr.equals(" ")) {
                 Double debt = Double.parseDouble(debtStr);
                 if (personMap.containsKey(debtorName)) {
-                    Person dedtor = personMap.get(debtorName);
-                    debtorMap.put(dedtor, debt);
+                    Person debtor = personMap.get(debtorName);
+                    debtorMap.put(debtor, debt);
                 }
             }
         }
-        personExpencesMap.put(expenceName, debtorMap);
-
+        personExpensesMap.put(expenseName, debtorMap);
     }
 
     private List<String[]> getFileStrings() {
         List<String[]> fileStrings = new ArrayList<>();
-        try (Reader reader = new FileReader(PATH_INPUT_FILE)) {      // TODO: 22.03.2022 обработать exception
+        try (Reader reader = new FileReader(pathInputFile, StandardCharsets.UTF_8)) {
             BufferedReader bufferedReader = new BufferedReader(reader);
             while (bufferedReader.ready()) {
                 String lineStr = bufferedReader.readLine();
-                if (lineStr.substring(lineStr.length() - 1).equals(",")) {
+                if (lineStr.endsWith(",")) {
                     lineStr += " ";
                 }
-                String[] fileline = lineStr.split(",");
-                fileStrings.add(fileline);
+                String[] fileLine = lineStr.split(",");
+                fileStrings.add(fileLine);
             }
 
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
         }
         return fileStrings;
     }
 
-
-    private void printArray(List<String> array) {
-        for (String string : array) {
-            System.out.println(string);
-        }
-    }
 }
