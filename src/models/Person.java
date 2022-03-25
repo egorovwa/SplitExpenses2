@@ -5,22 +5,22 @@ import java.util.Map;
 import java.util.Objects;
 
 public class Person {
-    private String name;
-    private Map<String, Map<Person, Double>> personExpencesMap;
-    Double deposit;
+    private final String name;
+    private final Map<String, Map<Person, Double>> personExpensesMap;
+    private Double deposit;
 
     public Person(String name) {
         this.name = name;
         deposit = 0.0;
-        personExpencesMap = new HashMap<>();
+        personExpensesMap = new HashMap<>();
     }
 
-    public Map<String, Map<Person, Double>> getPersonExpencesMap() {
-        return personExpencesMap;
+    public Map<String, Map<Person, Double>> getPersonExpensesMap() {
+        return personExpensesMap;
     }
     public void setDeposit(){
-        for (String expenseName : personExpencesMap.keySet()){
-            Map<Person, Double> debtorMap = personExpencesMap.get(expenseName);
+        for (String expenseName : personExpensesMap.keySet()){
+            Map<Person, Double> debtorMap = personExpensesMap.get(expenseName);
             for (Person debtor : debtorMap.keySet()){
                 deposit = deposit+ debtorMap.get(debtor);
             }

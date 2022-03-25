@@ -1,17 +1,13 @@
 package models;
 
 public class Transaction {
-    Person from;
-    Person to;
-    double sum;
+    private final Person from;
+    private final Person to;
+    private double sum;
 
     public Transaction(Person from, Person to, double sum) {
         this.from = from;
         this.to = to;
-        this.sum = sum;
-    }
-
-    public void setSum(double sum) {
         this.sum = sum;
     }
 
